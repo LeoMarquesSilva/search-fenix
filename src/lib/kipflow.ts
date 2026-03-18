@@ -133,8 +133,6 @@ export async function getCpf(
   if (datasets.length) params.set("datasets", datasets.join(","));
   return kipflowFetch<CpfResponseDto>(
     `/cpf/v1/search?${params.toString()}`
-  ).catch(() =>
-    kipflowFetch<CpfResponseDto>(`/people/v1/search?${params.toString()}`)
   );
 }
 
@@ -180,4 +178,67 @@ export async function getEmails(
   return kipflowFetch<EmailSearchResponseDto>(
     `/contacts/v1/emails?${params.toString()}`
   );
+}
+
+export interface LegalProcessoValorCausa {
+  moeda?: string;
+  valor?: number;
+}
+
+export interface LegalProcessoItem {
+  numeroProcesso?: string;
+  numeroProcessoUnico?: string;
+  numero?: string;
+  tribunal?: string;
+  uf?: string;
+  segmento?: string;
+  dataDistribuicao?: string;
+  valorCausa?: number | LegalProcessoValorCausa;
+  assunto?: string;
+  assuntosCNJ?: Array<{ titulo?: string; codigoCNJ?: string; ePrincipal?: boolean }>;
+  polo?: string;
+  classeProcessual?: { nome?: string; codigoCNJ?: string };
+  juiz?: string;
+  orgaoJulgador?: string;
+  urlProcesso?: string;
+  partes?: Array<{ tipo?: string; nome?: string; polo?: string; cpf?: string; cnpj?: string; cnpjRaiz?: string }>;
+  statusPredictus?: { statusProcesso?: string; dataArquivamento?: string; ramoDireito?: string };
+  grauProcesso?: number;
+  [key: string]: unknown;
+}
+
+export interface LegalPartiesResponse {
+  success?: boolean;
+  data?: LegalProcessoItem[];
+  processos?: LegalProcessoItem[];
+  total?: number;
+  [key: string]: unknown;
+}
+
+export async function getProcessosJudiciaisByCnpj(
+  cnpj: string,
+  options?: { limiteResultados?: number }
+): Promise<LegalPartiesResponse> {
+  const clean = cnpj.replace(/\D/g, "");
+  if (clean.length !== 14) {
+    throw new Error("CNPJ deve ter 14 dígitos");
+  }
+  const params = new URLSearchParams({ q: clean });
+  if (options?.limiteResultados) {
+    params.set("limiteResultados", String(Math.min(10000, Math.max(1, options.limiteResultados))));
+  }
+  try {
+    return await kipflowFetch<LegalPartiesResponse>(
+      `/legal/v1/parties/cnpj?${params.toString()}`
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("PAUTH_ERROR") || msg.includes("provedor de dados jurídicos")) {
+      throw new Error(
+        "PAUTH_ERROR: Seu workspace não tem acesso aos dados jurídicos. " +
+        "Ative o módulo Jurídico no dashboard Kipflow (platform.kipflow.io)."
+      );
+    }
+    throw err;
+  }
 }
