@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ChevronDown, ChevronRight, LogIn, Building2 } from "lucide-react";
 import { SavedSearchViewer } from "@/components/SavedSearchViewer";
+import { SaveLeadFromCnpjButton } from "@/components/SaveLeadFromCnpjButton";
 
 interface HistoryEntry {
   id: string;
@@ -18,9 +19,14 @@ interface HistoryEntry {
   params: Record<string, unknown>;
 }
 
+function normalizeCnpj(v: string): string {
+  return String(v).replace(/\D/g, "").padStart(14, "0");
+}
+
 export default function HistoricoPage() {
   const [grouped, setGrouped] = useState<Record<string, HistoryEntry[]>>({});
   const [groupLabels, setGroupLabels] = useState<Record<string, string>>({});
+  const [savedCnpjs, setSavedCnpjs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -31,19 +37,21 @@ export default function HistoricoPage() {
     supabase.auth.getUser().then(({ data: { user: u } }) => {
       setUser(u ?? null);
       if (u) {
-        fetch("/api/search-history/grouped")
-          .then((r) => r.json())
-          .then((data) => {
-            if (data.authenticated) {
-              setGrouped(data.grouped ?? {});
-              setGroupLabels(data.groupLabels ?? {});
-              const keys = Object.keys(data.grouped ?? {});
-              if (keys.length > 0 && keys.length <= 10) {
-                setExpanded(new Set(keys));
-              }
+        Promise.all([
+          fetch("/api/search-history/grouped").then((r) => r.json()),
+          fetch("/api/leads").then((r) => r.json()),
+        ]).then(([historyData, leadsData]) => {
+          if (historyData.authenticated) {
+            setGrouped(historyData.grouped ?? {});
+            setGroupLabels(historyData.groupLabels ?? {});
+            const keys = Object.keys(historyData.grouped ?? {});
+            if (keys.length > 0 && keys.length <= 10) {
+              setExpanded(new Set(keys));
             }
-          })
-          .finally(() => setLoading(false));
+          }
+          const leads = (leadsData as { leads?: { cnpj?: string }[] }).leads ?? [];
+          setSavedCnpjs(new Set(leads.map((l) => normalizeCnpj(l.cnpj ?? ""))));
+        }).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -158,8 +166,19 @@ export default function HistoricoPage() {
                                   </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-3">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-sm text-[#f1f1f1]/70">{e.custoFormatado}</span>
+                                <SaveLeadFromCnpjButton
+                                  cnpj={e.params?.cnpj ? String(e.params.cnpj) : undefined}
+                                  domain={e.params?.domain ? String(e.params.domain) : undefined}
+                                  initialSaved={Boolean(
+                                    e.params?.cnpj && savedCnpjs.has(normalizeCnpj(String(e.params.cnpj)))
+                                  )}
+                                  onSaved={() => {
+                                    const c = e.params?.cnpj ? normalizeCnpj(String(e.params.cnpj)) : null;
+                                    if (c) setSavedCnpjs((prev) => new Set(prev).add(c));
+                                  }}
+                                />
                                 <button
                                   type="button"
                                   onClick={() => setExpandedEntryId((prev) => (prev === e.id ? null : e.id))}

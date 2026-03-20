@@ -59,6 +59,7 @@ export async function GET() {
 
     const grouped: Record<string, Array<{
       id: string;
+      search_type: string;
       tipo: string;
       result_count: number;
       custo: number;

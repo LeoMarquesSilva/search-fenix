@@ -1,38 +1,47 @@
 import type { CompanyDto } from "@/lib/types";
+import { SaveLeadButton } from "./SaveLeadButton";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 interface CompanyCardProps {
   company: CompanyDto;
   costFormatted?: string;
+  showSaveLead?: boolean;
 }
 
 function Field({ label, value }: { label: string; value?: string | number | boolean }) {
   if (value === undefined || value === null || value === "") return null;
   return (
     <div className="grid gap-1">
-      <span className="text-xs font-medium uppercase tracking-wider text-[#f1f1f1]/60">
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
-      <span className="text-sm text-[#f1f1f1]">
+      <span className="text-sm text-foreground">
         {typeof value === "boolean" ? (value ? "Sim" : "Não") : String(value)}
       </span>
     </div>
   );
 }
 
-export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
+export function CompanyCard({ company, costFormatted, showSaveLead = true }: CompanyCardProps) {
   return (
-    <article className="fenix-card-full rounded-xl border p-6 shadow-sm">
+    <Card className="rounded-xl">
+      <CardHeader className="pb-2">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-xl font-semibold text-[#f1f1f1]">
+        <h2 className="font-display text-xl font-semibold text-card-foreground">
           {company.razao_social ?? company.nome_fantasia ?? "—"}
         </h2>
-        {costFormatted && (
-          <span className="text-xs text-[#f1f1f1]/60">
-            Custo: {costFormatted}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {costFormatted && (
+            <span className="text-xs text-muted-foreground">
+              Custo: {costFormatted}
+            </span>
+          )}
+          {showSaveLead && <SaveLeadButton company={company} />}
+        </div>
       </div>
-
+      </CardHeader>
+      <CardContent className="pt-0">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="CNPJ" value={company.cnpj} />
         <Field label="Nome Fantasia" value={company.nome_fantasia} />
@@ -53,24 +62,24 @@ export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
       </div>
 
       {company.cnae_principal_desc_subclasse && (
-        <div className="mt-4 border-t border-[#D5B170]/20 pt-4">
+        <div className="mt-4 border-t border-border pt-4">
           <Field label="CNAE Principal" value={company.cnae_principal_desc_subclasse} />
         </div>
       )}
 
       {company.telefones && company.telefones.length > 0 && (
-        <div className="mt-4 border-t border-[#D5B170]/20 pt-4">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#f1f1f1]/60">
+        <div className="mt-4 border-t border-border pt-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Telefones
           </span>
           <ul className="mt-1 space-y-1">
             {company.telefones.map((t, i) => (
               <li key={i} className="flex items-center gap-2 text-sm">
-                <span>{t.telefone_completo}</span>
+                <span className="text-foreground">{t.telefone_completo}</span>
                 {t.whatsapp && (
-                  <span className="rounded bg-[#D5B170]/20 px-1.5 py-0.5 text-xs text-[#D5B170]">
+                  <Badge variant="secondary" className="text-primary">
                     WhatsApp
-                  </span>
+                  </Badge>
                 )}
               </li>
             ))}
@@ -79,8 +88,8 @@ export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
       )}
 
       {company.sites && company.sites.length > 0 && (
-        <div className="mt-4 border-t border-[#D5B170]/20 pt-4">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#f1f1f1]/60">
+        <div className="mt-4 border-t border-border pt-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Sites
           </span>
           <ul className="mt-1 space-y-1">
@@ -90,7 +99,7 @@ export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
                   href={`https://${s.site}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="fenix-link text-sm underline"
+                  className="text-primary text-sm underline hover:underline"
                 >
                   {s.site}
                 </a>
@@ -101,15 +110,15 @@ export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
       )}
 
       {company.emails && company.emails.length > 0 && (
-        <div className="mt-4 border-t border-[#D5B170]/20 pt-4">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#f1f1f1]/60">
+        <div className="mt-4 border-t border-border pt-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Emails
           </span>
           <ul className="mt-1 space-y-1">
             {company.emails.map((e, i) => (
               <li key={i} className="flex items-center gap-2 text-sm">
-                {e.nome && <span className="text-[#f1f1f1]/60">{e.nome}:</span>}
-                <a href={`mailto:${e.email}`} className="fenix-link hover:underline">
+                {e.nome && <span className="text-muted-foreground">{e.nome}:</span>}
+                <a href={`mailto:${e.email}`} className="text-primary hover:underline">
                   {e.email}
                 </a>
               </li>
@@ -119,35 +128,35 @@ export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
       )}
 
       {(company.facebook?.length || company.instagram?.length || company.linkedin_url || company.twitter) ? (
-        <div className="mt-4 border-t border-[#D5B170]/20 pt-4">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#f1f1f1]/60">
+        <div className="mt-4 border-t border-border pt-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Redes Sociais
           </span>
           <ul className="mt-1 space-y-1">
             {company.facebook?.map((f, i) => (
               <li key={`fb-${i}`}>
-                <a href={`https://${f.url}`} target="_blank" rel="noopener noreferrer" className="fenix-link text-sm hover:underline">
+                <a href={`https://${f.url}`} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline">
                   Facebook: {f.url}
                 </a>
               </li>
             ))}
             {company.instagram?.map((ig, i) => (
               <li key={`ig-${i}`}>
-                <a href={`https://${ig.url}`} target="_blank" rel="noopener noreferrer" className="fenix-link text-sm hover:underline">
+                <a href={`https://${ig.url}`} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline">
                   Instagram: {ig.url}
                 </a>
               </li>
             ))}
             {company.linkedin_url && (
               <li>
-                <a href={`https://${company.linkedin_url}`} target="_blank" rel="noopener noreferrer" className="fenix-link text-sm hover:underline">
+                <a href={`https://${company.linkedin_url}`} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline">
                   LinkedIn: {company.linkedin_url}
                 </a>
               </li>
             )}
             {company.twitter && (
               <li>
-                <a href={`https://${company.twitter}`} target="_blank" rel="noopener noreferrer" className="fenix-link text-sm hover:underline">
+                <a href={`https://${company.twitter}`} target="_blank" rel="noopener noreferrer" className="text-primary text-sm hover:underline">
                   Twitter: {company.twitter}
                 </a>
               </li>
@@ -157,13 +166,13 @@ export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
       ) : null}
 
       {company.atividades_secundarias && company.atividades_secundarias.length > 0 && (
-        <div className="mt-4 border-t border-[#D5B170]/20 pt-4">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#f1f1f1]/60">
+        <div className="mt-4 border-t border-border pt-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Atividades Secundárias (CNAE)
           </span>
           <ul className="mt-1 space-y-1">
             {company.atividades_secundarias.map((a, i) => (
-              <li key={i} className="text-sm">
+              <li key={i} className="text-sm text-foreground">
                 {a.desc_subclasse ?? a.desc_classe ?? `${a.classe}`}
               </li>
             ))}
@@ -172,15 +181,15 @@ export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
       )}
 
       {company.socios && company.socios.length > 0 && (
-        <div className="mt-4 border-t border-[#D5B170]/20 pt-4">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#f1f1f1]/60">
+        <div className="mt-4 border-t border-border pt-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Sócios
           </span>
           <ul className="mt-1 space-y-2">
             {company.socios.map((s, i) => (
-              <li key={i} className="rounded-lg border border-[#D5B170]/20 px-3 py-2 text-sm">
-                <div className="font-medium">{s.nome_socio ?? s.nome_com_cnpj_cpf}</div>
-                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#f1f1f1]/60">
+              <li key={i} className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
+                <div className="font-medium text-foreground">{s.nome_socio ?? s.nome_com_cnpj_cpf}</div>
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   {s.qualificacao_socio && <span>Qualificação: {s.qualificacao_socio}</span>}
                   {s.data_entrada_sociedade && <span>Entrada: {s.data_entrada_sociedade}</span>}
                   {s.faixa_etaria_socio && <span>Faixa etária: {s.faixa_etaria_socio}</span>}
@@ -193,27 +202,27 @@ export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
       )}
 
       {company.divida && (company.divida.dividas?.length || company.divida.total) && (
-        <div className="mt-4 border-t border-[#D5B170]/20 pt-4">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#f1f1f1]/60">
+        <div className="mt-4 border-t border-border pt-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Dívida Ativa da União
           </span>
           <div className="mt-1 space-y-2">
             {(company.divida.total ?? 0) > 0 && (
-              <div className="text-sm">
+              <div className="text-sm text-foreground">
                 <span className="font-medium">Total consolidado: </span>
                 R$ {(company.divida.total ?? 0).toLocaleString("pt-BR")}
                 {company.divida.total_previdenciaria != null && company.divida.total_previdenciaria > 0 && (
-                  <span className="ml-2 text-[#f1f1f1]/60">(Prev: R$ {company.divida.total_previdenciaria.toLocaleString("pt-BR")})</span>
+                  <span className="ml-2 text-muted-foreground">(Prev: R$ {company.divida.total_previdenciaria.toLocaleString("pt-BR")})</span>
                 )}
                 {company.divida.total_nao_previdenciaria != null && company.divida.total_nao_previdenciaria > 0 && (
-                  <span className="ml-2 text-[#f1f1f1]/60">(Não prev: R$ {company.divida.total_nao_previdenciaria.toLocaleString("pt-BR")})</span>
+                  <span className="ml-2 text-muted-foreground">(Não prev: R$ {company.divida.total_nao_previdenciaria.toLocaleString("pt-BR")})</span>
                 )}
               </div>
             )}
             {company.divida.dividas?.map((d, i) => (
-              <div key={i} className="rounded-lg border border-[#D5B170]/40 bg-[#D5B170]/10 px-3 py-2 text-sm">
-                <div className="font-medium">{d.nome_devedor}</div>
-                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#f1f1f1]/60">
+              <div key={i} className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
+                <div className="font-medium text-foreground">{d.nome_devedor}</div>
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   {d.valor_consolidado != null && <span>Valor: R$ {d.valor_consolidado.toLocaleString("pt-BR")}</span>}
                   {d.tipo_divida && <span>Tipo: {d.tipo_divida}</span>}
                   {d.data_inscricao && <span>Inscrição: {d.data_inscricao}</span>}
@@ -224,6 +233,7 @@ export function CompanyCard({ company, costFormatted }: CompanyCardProps) {
           </div>
         </div>
       )}
-    </article>
+      </CardContent>
+    </Card>
   );
 }
